@@ -1,0 +1,25 @@
+{
+  "repository": {
+    "path": "..",
+    "remote": "origin",
+    "branch": ""
+  },
+  "commit": {
+    "messageTemplate": "sync({date}): update from {computer} at {time}"
+  },
+  "schedule": {
+    "mode": "interval",
+    "intervalMinutes": 30,
+    "dailyTime": "08:30"
+  },
+  "startup": {
+    "enabled": true
+  },
+  "windows": {
+    "taskName": "",
+    "startupRunValueName": ""
+  },
+  "linux": {
+    "cronMarker": ""
+  }
+}
