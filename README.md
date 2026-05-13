@@ -33,7 +33,10 @@ If an equivalent `.git-sync` ignore rule already exists, it is left unchanged.
 
 - The target repository must already be a valid Git worktree.
 - Scheduled pushes require non-interactive Git credentials to work.
-- `git push` failures are surfaced; the scripts do not auto-merge or auto-pull.
+- Before pushing, the scripts fetch the selected remote and rebase onto the matching remote-tracking branch when local commits need to be uploaded.
+- The scripts never auto-merge or force-push. If rebase hits a conflict, it is aborted and surfaced for manual resolution.
+- A clean worktree no longer hides earlier failed uploads: if local commits are still ahead of the remote-tracking branch, they are pushed on the next run.
+- If a push races with another device and gets rejected, the scripts fetch, rebase once more when applicable, and retry that push exactly once.
 - If two repositories share the same folder name on one machine, set explicit Windows task names and Linux cron markers in the JSON to avoid collisions.
 - Windows user autorun is stored in the `Run` registry key. Extremely deep filesystem paths can exceed the registry command length limit and will be rejected during install.
 
@@ -147,5 +150,8 @@ Both sync implementations:
 - Detect repository changes.
 - Run `git add --all`.
 - Create a commit only when staged changes exist.
+- Fetch the selected remote and detect whether the local branch still has commits that need to be uploaded.
+- Rebase on the matching remote-tracking branch when local commits need to be uploaded and that branch exists.
 - Push to the selected remote and branch.
+- Retry one rejected push after one more fetch/rebase cycle.
 - Exit cleanly when there is nothing to sync.
