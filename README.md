@@ -101,8 +101,10 @@ pwsh -NoProfile -File .\.git-sync\windows\run.ps1
 Install or update the scheduled task and autorun entry:
 
 ```powershell
-pwsh -NoProfile -File .\.git-sync\windows\install.ps1 -Force
+pwsh -NoProfile -File .\.git-sync\windows\install.ps1
 ```
+
+Use `-Force` only when you intentionally want to replace an existing same-named task that points at a different config path.
 
 Uninstall the scheduled task and autorun entry:
 

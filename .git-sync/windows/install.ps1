@@ -104,6 +104,24 @@ function Ensure-GitIgnoreEntry {
     return $true
 }
 
+function Test-ScheduledTaskUsesConfig {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Task,
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigPath
+    )
+
+    foreach ($taskAction in @($Task.Actions)) {
+        $arguments = [string]$taskAction.Arguments
+        if ($arguments.IndexOf($ConfigPath, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
 $resolvedConfigPath = (Resolve-Path -LiteralPath $ConfigPath).Path
 $configDirectory = Split-Path -Parent $resolvedConfigPath
 $config = Get-Content -LiteralPath $resolvedConfigPath -Raw | ConvertFrom-Json
@@ -195,13 +213,21 @@ $registerParams = @{
     Trigger = $triggers
     Settings = $settings
     Description = "Automatically commit and push repository updates from '$resolvedRepoPath'."
+    ErrorAction = 'Stop'
 }
 
-if ($Force) {
+$existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+$taskAlreadyExisted = $null -ne $existingTask
+if ($taskAlreadyExisted -and -not $Force -and -not (Test-ScheduledTaskUsesConfig -Task $existingTask -ConfigPath $resolvedConfigPath)) {
+    throw "Scheduled task '$taskName' already exists and does not appear to use '$resolvedConfigPath'. Re-run with -Force to replace it, or set windows.taskName in '$resolvedConfigPath' to a unique name."
+}
+
+if ($Force -or $taskAlreadyExisted) {
     $registerParams.Force = $true
 }
 
 Register-ScheduledTask @registerParams | Out-Null
+$taskOperation = if ($taskAlreadyExisted) { 'updated' } else { 'registered' }
 
 $startupRunValueName = [string]$config.windows.startupRunValueName
 if ([string]::IsNullOrWhiteSpace($startupRunValueName)) {
@@ -229,4 +255,4 @@ $scheduleSummary = switch ($scheduleMode) {
     'daily' { "daily at $dailyTime" }
 }
 
-Write-Output "Scheduled task '$taskName' registered from '$resolvedConfigPath' to run $scheduleSummary. User startup autorun enabled: $startupEnabled. .gitignore updated: $gitIgnoreUpdated."
+Write-Output "Scheduled task '$taskName' $taskOperation from '$resolvedConfigPath' to run $scheduleSummary. User startup autorun enabled: $startupEnabled. .gitignore updated: $gitIgnoreUpdated."
