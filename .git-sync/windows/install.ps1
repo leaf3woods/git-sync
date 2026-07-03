@@ -7,13 +7,23 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Quote-TaskArgument {
+function Format-TaskArgument {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Value
     )
 
     return '"' + ($Value -replace '"', '\"') + '"'
+}
+
+# Backwards-compatible wrapper for the old (unapproved) verb name
+function Quote-TaskArgument {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    return (Format-TaskArgument -Value $Value)
 }
 
 function Resolve-ConfiguredPath {
